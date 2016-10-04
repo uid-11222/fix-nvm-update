@@ -4,17 +4,20 @@
 
 const fs = require('fs'),
       path = require('path'),
-      execFile = require('child_process').execFile;
+      exec = require('child_process').execSync;
 
-const DEFAULT_NODES = `~/.nvm/versions/node`,
+const DEFAULT_NODES = path.join(`~`, `.nvm`, `versions`, `node`),
       TMP = `__TMP_NODE`,
-      MV = `mv`;
+      MV = `mv -v`;
+
+const OPTIONS = { encoding: `utf8` };
 
 const CONFIG = path.join(__dirname, `..`, `config.json`);
 
 /**
  * Move global package from old Node.js version to new.
- * @param {string[]} args List of string arguments.
+ * @param  {string[]} args List of string arguments.
+ * @return {boolean} false, if some unexpected happened.
  */
 const fixNvmUpdate = module.exports = args => {
 
@@ -22,12 +25,12 @@ const fixNvmUpdate = module.exports = args => {
 
   if (args.length !== 1 || !to || to === `--help`) {
     console.log(`usage: fix-nvm-update <new-version>`);
-    return;
+    return true;
   }
 
   if (!/^[a-z0-9-.]+$/i.test(to)) {
     console.error(`Wrong new Node version format ("${to}").`);
-    return;
+    return false;
   }
 
   try {
@@ -41,7 +44,7 @@ const fixNvmUpdate = module.exports = args => {
 
   if (!(config instanceof Object)) {
     console.error(`Wrong config format (in "${CONFIG}").`);
-    return;
+    return false;
   }
 
   if (!hasOwn.call(config), `nodes`) {
@@ -53,21 +56,21 @@ const fixNvmUpdate = module.exports = args => {
 
   if (!nodes || typeof nodes !== `string`) {
     console.error(`Wrong config.nodes format (in "${CONFIG}"): "${nodes}".`);
-    return;
+    return false;
   }
 
   if (!hasOwn.call(config, `last`)) {
     config.last = to;
     console.log(`No last field in "${CONFIG}", so write "${to}" as last.`);
     writeJSON(CONFIG, config);
-    return;
+    return true;
   }
 
   const from = config.last;
 
   if (!from || typeof from !== `string`) {
     console.error(`Wrong config.last format (in "${CONFIG}"): "${from}".`);
-    return;
+    return false;
   }
 
   const tmp = path.join(nodes, TMP);
@@ -75,7 +78,7 @@ const fixNvmUpdate = module.exports = args => {
   try {
     fs.accessSync(tmp);
     console.error(`TMP directory already exists ("${tmp}").`);
-    return;
+    return false;
   } catch (e) {}
 
   console.log(`Create TMP directory ("${tmp}").`);
@@ -104,6 +107,18 @@ const fixNvmUpdate = module.exports = args => {
     [MV, tmpAll, toBin]
 
   ];
+
+  for (const command of commands) {
+
+    const run = command.join(` `);
+
+    console.log(`Exec "${run}".`);
+    exec(run, OPTIONS);
+  }
+
+  config.last = to;
+  console.log(`Write version "${to}" to config as last installed.`);
+  writeJSON(CONFIG, config);
 
 };
 
