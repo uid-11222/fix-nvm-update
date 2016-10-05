@@ -12,7 +12,7 @@ const SELF = `fix-nvm-update`,
 
 const OPTIONS = { encoding: `utf8` };
 
-const DEFAULT_NODES = path.join(`~`, `.nvm`, `versions`, `node`),
+const DEFAULT_NODES = path.join(`$HOME`, `.nvm`, `versions`, `node`),
       CONFIG = path.join(__dirname, `..`, `config.json`),
       PACKAGE = path.join(__dirname, `..`, `package.json`);
 
@@ -52,7 +52,7 @@ const fixNvmUpdate = module.exports = args => {
     return false;
   }
 
-  if (!hasOwn.call(config), `nodes`) {
+  if (!hasOwn.call(config, `nodes`)) {
     config.nodes = DEFAULT_NODES;
     writeJSON(CONFIG, config);
   }
@@ -60,13 +60,13 @@ const fixNvmUpdate = module.exports = args => {
   const nodes = config.nodes;
 
   if (!nodes || typeof nodes !== `string`) {
-    console.error(`Wrong config.nodes format (in "${CONFIG}"): "${nodes}".`);
+    console.error(`Wrong "nodes" format (in "${CONFIG}"): "${nodes}".`);
     return false;
   }
 
   if (!hasOwn.call(config, `last`)) {
     config.last = to;
-    console.log(`No last field in "${CONFIG}", so write "${to}" as last.`);
+    console.log(`No "last" field in "${CONFIG}", so write "${to}" as last.`);
     writeJSON(CONFIG, config);
     return true;
   }
@@ -91,9 +91,6 @@ const fixNvmUpdate = module.exports = args => {
     return false;
   } catch (e) {}
 
-  console.log(`Create TMP directory ("${tmp}").`);
-  fs.mkdirSync(tmp);
-
   const tmpAll  = path.join(tmp, `*`),
         tmpNpm  = path.join(tmp, `npm`),
         tmpNode = path.join(tmp, `node`),
@@ -105,6 +102,15 @@ const fixNvmUpdate = module.exports = args => {
         fromBin = path.join(nodes, from, `bin`),
           toBin = path.join(nodes,   to, `bin`),
          binAll = path.join(fromBin, `*`);
+
+  if (!isInstalled(fromLib, fromBin)) {
+    console.error(`Version "${from}" not installed`);
+    return false;
+  }
+  if (!isInstalled(toLib, toBin)) {
+    console.log(`New version "${from}" not yet installed`);
+    return true;
+  }
 
   const commands = [
 
@@ -118,21 +124,38 @@ const fixNvmUpdate = module.exports = args => {
 
   ];
 
+  console.log(`Create TMP directory ("${tmp}").`);
+  fs.mkdirSync(tmp);
+
   for (const command of commands) {
 
     const run = command.join(` `);
 
     console.log(`Exec "${run}".`);
-    exec(run, OPTIONS);
+    console.log(exec(run, OPTIONS));
   }
 
   config.last = to;
   console.log(`Write version "${to}" to config as last installed.`);
   writeJSON(CONFIG, config);
 
+  console.log(`Remove TMP directory ("${tmp}").`);
+  fs.rmdirSync(tmp);
+
+  return true;
 };
 
 const hasOwn = ({}).hasOwnProperty;
+
+/**
+ * Throw error, if value is not true.
+ * @param  {*} value
+ * @param  {string} msg
+ * @throws {Error}
+ */
+const assert = (value, msg) => {
+  if (value !== true) throw Error('Assert ' + (msg || ''));
+};
 
 /**
  * Sync reading JSON from filesystem.
@@ -152,6 +175,25 @@ const readJSON = name => {
  */
 const writeJSON = (name, data) => {
   fs.writeFileSync(name, JSON.stringify(data));
+};
+
+/**
+ * Checks that such Node version installed.
+ * @param  {string} lib Path to lib/
+ * @param  {string} bin Path to bin/
+ * @return {boolean} True, if there is such version.
+ */
+const isInstalled = (lib, bin) => {
+  try {
+    assert(fs.statSync(lib).isDirectory());
+    assert(fs.statSync(bin).isDirectory());
+    assert(fs.statSync(path.join(lib,  `npm`)).isDirectory());
+    assert(fs.statSync(path.join(bin,  `npm`)).isFile());
+    assert(fs.statSync(path.join(bin, `node`)).isFile());
+  } catch (e) {
+    return false;
+  }
+  return true;
 };
 
 /**

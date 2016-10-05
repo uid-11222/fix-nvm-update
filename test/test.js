@@ -3,14 +3,13 @@ describe('fix-nvm-update', function() {
 
 const fs = require('fs'),
       exec = require('child_process').execSync,
-      inspect = require('util').inspect,
       path = require('path'),
       fixNvmUpdate = require('../src/fix-nvm-update');
 
 const CONFIG = path.join(__dirname, `..`, `config.json`),
       TMP = path.join(__dirname, `TMP`),
       SELF = `fix-nvm-update`,
-      MAIN = `src/${SELF}.js`;
+      MAIN = path.join(__dirname, `..`, `src`, `${SELF}.js`);
 
 const OPTIONS = { encoding: `utf8` };
 
@@ -22,17 +21,18 @@ const libA = path.join(TMP, `A`, `lib`, `node_modules`),
       binB = path.join(TMP, `B`, `bin`),
       npmA = path.join(libA, `npm`),
       npmB = path.join(libB, `npm`),
-      nodeA = path.join(libA, `node`),
-      nodeB = path.join(libB, `node`),
+      nodeA = path.join(binA, `node`),
+      nodeB = path.join(binB, `node`),
       bnpmA = path.join(binA, `npm`),
       bnpmB = path.join(binB, `npm`);
 
-const files = [npmA, npmB, nodeA, nodeB, bnpmA, bnpmB,
-    path.join(libA, f1), path.join(libA, f2),
-    path.join(binA, b1), path.join(binA, b2)
-  ];
+const notMoved = [npmA, npmB, nodeA, nodeB, bnpmA, bnpmB],
+      files = notMoved.concat(
+        path.join(libA, f1), path.join(libA, f2),
+        path.join(binA, b1), path.join(binA, b2)
+      );
 
-let config, NODES;
+let config, NODES, LAST;
 
 /**
  * Throw error, if value is not true.
@@ -45,13 +45,20 @@ const assert = (value, msg) => {
 };
 
 /**
+ * Read text from file in sync manner.
+ * @param  {string} name Filename.
+ * @return {string}
+ */
+const readText = name => fs.readFileSync(name, 'utf8');
+
+/**
  * Sync reading JSON from file.
  * @param  {string} name Filename.
  * @return {?Object} Parse JSON value (null if no such file).
  */
 const readJSON = name => {
   try {
-    return JSON.parse(fs.readFileSync(name, 'utf8'));
+    return JSON.parse(readText(name));
   } catch(e) { return null; }
 };
 
@@ -89,7 +96,11 @@ try {
   fs.mkdirSync(binB);
 
   for (const file of files) {
-    fs.writeFileSync(file, getRelative(file));
+    if (file === npmA || file === npmB) {
+      fs.mkdirSync(file);
+    } else {
+      fs.writeFileSync(file, getRelative(file));
+    }
   }
 
 }
@@ -104,7 +115,7 @@ describe('simple API', function() {
 
   it('works with array of string args', function() {
 
-    fixNvmUpdate([`foo`, `bar`]);
+    fixNvmUpdate([`A`, `B`]);
 
   });
 
@@ -122,13 +133,16 @@ describe('simple API', function() {
 
   it('return true with array of string args', function() {
 
-    assert(fixNvmUpdate([`foo`, `bar`]));
+    assert(fixNvmUpdate([`A`, `B`]));
 
   });
 
   it('return true with one arg', function() {
 
-    assert(fixNvmUpdate([`foo`]));
+    config = readJSON(CONFIG);
+    if (config) LAST = config.last;
+
+    assert(fixNvmUpdate([`A`]));
 
   });
 
@@ -139,7 +153,11 @@ describe('simple API', function() {
 
     assert(NODES && typeof NODES === 'string');
 
+    /**
+     * HACK Temporary change config here, only for testing.
+     */
     config.nodes = TMP;
+    config.last  = undefined;
     writeJSON(CONFIG, config);
 
   });
@@ -163,7 +181,7 @@ describe('API', function() {
     try {
 
       console.log = str => {
-        assert(str.includes(`usage`));
+        assert(str.startsWith(`usage`));
         assert(str.includes(SELF));
         assert(str.includes(`version`));
         ++called;
@@ -192,7 +210,7 @@ describe('API', function() {
     try {
 
       console.log = str => {
-        assert(str.includes(`usage`));
+        assert(str.startsWith(`usage`));
         assert(str.includes(SELF));
         assert(str.includes(`version`));
         ++called;
@@ -221,7 +239,7 @@ describe('API', function() {
     try {
 
       console.log = str => {
-        assert(str.includes(`usage`));
+        assert(str.startsWith(`usage`));
         assert(str.includes(SELF));
         assert(str.includes(`version`));
         ++called;
@@ -229,7 +247,7 @@ describe('API', function() {
 
       console.error = () => assert(false);
 
-      assert(fixNvmUpdate([`foo`, `bar`]));
+      assert(fixNvmUpdate([`A`, `B`]));
       assert(called === 1);
 
     } finally {
@@ -243,7 +261,7 @@ describe('API', function() {
 
   it(`show message about the same version`, function() {
 
-    assert(fixNvmUpdate([`foo`]));
+    assert(fixNvmUpdate([`A`]));
 
     const error = console.error;
     const log = console.log;
@@ -252,7 +270,7 @@ describe('API', function() {
     try {
 
       console.log = str => {
-        assert(str.includes(`foo`));
+        assert(str.includes(`A`));
         assert(str.includes(`not`));
         assert(str.includes(`version`));
         ++called;
@@ -260,7 +278,7 @@ describe('API', function() {
 
       console.error = () => assert(false);
 
-      assert(fixNvmUpdate([`foo`]));
+      assert(fixNvmUpdate([`A`]));
       assert(called === 1);
 
     } finally {
@@ -270,12 +288,145 @@ describe('API', function() {
 
     }
 
-    config.nodes = NODES;
-    writeJSON(CONFIG, config);
+  });
+
+});
+
+describe('moving', function() {
+
+  it('move from old version to new', function() {
+
+    assert(fixNvmUpdate([`B`]));
+
+    for (const file of notMoved) {
+      if (file === npmA || file === npmB) {
+        assert(fs.statSync(file).isDirectory());
+      } else {
+        assert(readText(file) === getRelative(file));
+      }
+    }
+
+    let pt;
+
+    pt = path.join(libB, f1);
+    assert(readText(pt).replace(`A`, `B`) === getRelative(pt));
+    pt = path.join(libB, f2);
+    assert(readText(pt).replace(`A`, `B`) === getRelative(pt));
+
+    pt = path.join(binB, b1);
+    assert(readText(pt).replace(`A`, `B`) === getRelative(pt));
+    pt = path.join(binB, b2);
+    assert(readText(pt).replace(`A`, `B`) === getRelative(pt));
+
+  });
+
+  it('move again', function() {
+
+    assert(fixNvmUpdate([`A`]));
+
+    for (const file of notMoved) {
+      if (file === npmA || file === npmB) {
+        assert(fs.statSync(file).isDirectory());
+      } else {
+        assert(readText(file) === getRelative(file));
+      }
+    }
+
+    let pt;
+
+    pt = path.join(libA, f1);
+    assert(readText(pt) === getRelative(pt));
+    pt = path.join(libA, f2);
+    assert(readText(pt) === getRelative(pt));
+
+    pt = path.join(binA, b1);
+    assert(readText(pt) === getRelative(pt));
+    pt = path.join(binA, b2);
+    assert(readText(pt) === getRelative(pt));
 
   });
 
 });
 
+describe('bash command', function() {
+
+  it(`show usage with option "--help"`, function() {
+
+    assert(exec(`${MAIN} --help`, OPTIONS).startsWith(`usage`));
+
+  });
+
+  it(`show usage with empty arg`, function() {
+
+    assert(exec(`${MAIN}`, OPTIONS).startsWith(`usage`));
+
+  });
+
+  it(`show usage with extra args`, function() {
+
+    assert(exec(`${MAIN} A B`, OPTIONS).startsWith(`usage`));
+
+  });
+
+  it('move from old version to new', function() {
+
+    exec(`${MAIN} B`, OPTIONS);
+
+    for (const file of notMoved) {
+      if (file === npmA || file === npmB) {
+        assert(fs.statSync(file).isDirectory());
+      } else {
+        assert(readText(file) === getRelative(file));
+      }
+    }
+
+    let pt;
+
+    pt = path.join(libB, f1);
+    assert(readText(pt).replace(`A`, `B`) === getRelative(pt));
+    pt = path.join(libB, f2);
+    assert(readText(pt).replace(`A`, `B`) === getRelative(pt));
+
+    pt = path.join(binB, b1);
+    assert(readText(pt).replace(`A`, `B`) === getRelative(pt));
+    pt = path.join(binB, b2);
+    assert(readText(pt).replace(`A`, `B`) === getRelative(pt));
+
+  });
+
+  it('move again', function() {
+
+    exec(`${MAIN} A`, OPTIONS);
+
+    for (const file of notMoved) {
+      if (file === npmA || file === npmB) {
+        assert(fs.statSync(file).isDirectory());
+      } else {
+        assert(readText(file) === getRelative(file));
+      }
+    }
+
+    let pt;
+
+    pt = path.join(libA, f1);
+    assert(readText(pt) === getRelative(pt));
+    pt = path.join(libA, f2);
+    assert(readText(pt) === getRelative(pt));
+
+    pt = path.join(binA, b1);
+    assert(readText(pt) === getRelative(pt));
+    pt = path.join(binA, b2);
+    assert(readText(pt) === getRelative(pt));
+
+    /**
+     * HACK Restore config. This code should be in last test.
+     */
+    config.nodes = NODES;
+    config.last  = LAST;
+    writeJSON(CONFIG, config);
+
+  });
+
+});
 
 });

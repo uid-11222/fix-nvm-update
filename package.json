@@ -1,6 +1,6 @@
 {
   "name": "fix-nvm-update",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Migrating global npm packages to new Node.js version (nvm only)",
   "main": "src/fix-nvm-update.js",
   "scripts": {
