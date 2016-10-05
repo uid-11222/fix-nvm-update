@@ -30,6 +30,8 @@ It works, but this solution has a problems:
  - all packages reinstalled -- so they lose their internal "state" (but may be this is correct behaviour and packages should not have some state)
  - old packages do not deleted, but they could weight more then 100 Mb
  - old bin links do not deleted (but there is no real problem with that)
+But simple moving packages to new Node version directory works very quickly. **fix-nvm-update** does it carefully with full logging (in stdout).
+
 
 ## How ##
 Let current directory is the path of Node versions, **old** -- your old Node version, and **new** -- the new one. Then **fix-nvm-update** just run commands:

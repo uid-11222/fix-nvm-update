@@ -5,7 +5,7 @@ describe('fix-nvm-update', function() {
  * Default timeout is 2000, but sometimes some tests may take
  * longer due to the synchronous operation of the file system
  */
-this.timeout(8000);
+this.timeout(8192);
 
 const fs = require('fs'),
       exec = require('child_process').execSync,

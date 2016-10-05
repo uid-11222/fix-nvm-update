@@ -66,7 +66,7 @@ const fixNvmUpdate = module.exports = args => {
 
   if (!hasOwn.call(config, `last`)) {
     config.last = to;
-    console.log(`No "last" field in "${CONFIG}", so write "${to}" as last.`);
+    console.log(`No "last" field in "${CONFIG}", so wrote "${to}" as "last".`);
     writeJSON(CONFIG, config);
     return true;
   }
