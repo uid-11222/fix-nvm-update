@@ -124,6 +124,10 @@ const fixNvmUpdate = module.exports = args => {
 
   ];
 
+  config.last = to;
+  console.log(`Write version "${to}" to config as last installed.`);
+  writeJSON(CONFIG, config);
+
   console.log(`Create TMP directory ("${tmp}").`);
   fs.mkdirSync(tmp);
 
@@ -134,10 +138,6 @@ const fixNvmUpdate = module.exports = args => {
     console.log(`Exec "${run}".`);
     console.log(exec(run, OPTIONS));
   }
-
-  config.last = to;
-  console.log(`Write version "${to}" to config as last installed.`);
-  writeJSON(CONFIG, config);
 
   console.log(`Remove TMP directory ("${tmp}").`);
   fs.rmdirSync(tmp);

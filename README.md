@@ -1,47 +1,50 @@
-# fix-nvm-update
+# fix-nvm-update #
 
 [![NPM version][npm-image]][npm-url] ![node][node-image] ![dependencies][dependencies-image] [![License MIT][license-image]](LICENSE)
 
 [![NPM](https://nodei.co/npm/npm-statistic.png)](https://nodei.co/npm/fix-nvm-update/)
 
-https://github.com/creationix/nvm#migrating-global-packages-while-installing
+**fix-nvm-update** quickly move all global npm packages from old Node version to new (only for versions, installed via [NVM](https://github.com/creationix/nvm), without reinstalling.
 
-## Migrating global packages while installing
-
-If you want to install a new version of Node.js and migrate npm packages from a previous version:
+## Usage ##
+You need a node version >=6.0.0.  
+Install **fix-nvm-update** localy or global, and set your current version of Node on first **fix-nvm-update** run:
 ```bash
-nvm install node --reinstall-packages-from=node
+$ fix-nvm-update v6.6.0
 ```
-This will first use "nvm version node" to identify the current version you're migrating packages from. Then it resolves the new version to install from the remote server and installs it. Lastly, it runs "nvm reinstall-packages" to reinstall the npm packages from your prior version of Node to the new one.
-
-You can also install and migrate npm packages from specific versions of Node like this:
+After installing new Node version just run **fix-nvm-update** with this new version:
 ```bash
-nvm install 6 --reinstall-packages-from=5
-nvm install v4.2 --reinstall-packages-from=iojs
+$ nvm install v6.7.0
+$ fix-nvm-update v6.7.0
 ```
+Usually you can see all installed Node versions in directory **~/.nvm/versions/node**. If on your system this directory has other path, you can change it in field **nodes** of **config.json** file in **fix-nvm-update** directory.  
+In **last** field of **config.json** you can manually set Node version (for moving packages from this version to new one).
 
-But this solution has a problems:
+## Why ##
+[NVM](https://github.com/creationix/nvm) offers a official way of updating: [Migrating global packages while installing](https://github.com/creationix/nvm#migrating-global-packages-while-installing)
+```bash
+nvm install v6.7.0 --reinstall-packages-from=v6.6.0
+```
+It works, but this solution has a problems:
  - all packages reinstalled -- it's take a long time
- - old packages do not deleted, but is's more then 100 Mb
+ - all packages reinstalled -- so they lose their internal "state" (but may be this is correct behaviour and packages should not have some state)
+ - old packages do not deleted, but they could weight more then 100 Mb
  - old bin links do not deleted (but there is no real problem with that)
 
-That's why we need a simple update script:
- - let $NODES be ~/.nvm/versions/node
- - let $NEW read from process.args (like "v6.5.0")
- - 
- - If $OLD === "" then { $OLD = $NEW, return; }
- - 
- - mv $NODES/$OLD/lib/node_modules/* $NODES/__TMP
- - mv $NODES/__TMP/npm $NODES/$OLD/lib/node_modules
- - mv $NODES/__TMP/* $NODES/$NEW/lib/node_modules
- - 
- - mv $NODES/$OLD/bin/* $NODES/__TMP
- - mv $NODES/__TMP/npm $NODES/__TMP/node $NODES/$OLD/bin
- - mv $NODES/__TMP/* $NODES/$NEW/bin
- - 
- - $OLD = $NEW
+## How ##
+Let $NODES be the path of Node versions, $OLD -- your old Node version, and $NEW -- the new one. Then **fix-nvm-update** just run commands:
+```bash
+$ mv $NODES/$OLD/lib/node_modules/* $NODES/__TMP
+$ mv $NODES/__TMP/npm $NODES/$OLD/lib/node_modules
+$ mv $NODES/__TMP/* $NODES/$NEW/lib/node_modules
+$ mv $NODES/$OLD/bin/* $NODES/__TMP
+$ mv $NODES/__TMP/npm $NODES/__TMP/node $NODES/$OLD/bin
+$ mv $NODES/__TMP/* $NODES/$NEW/bin
+```
+So, **npm** package, and bin links to **npm** and **node** do not moving.
 
 ## Tests ##
+18 tests via Mocha:
 ```bash
 $ npm install
 $ npm test
