@@ -6,13 +6,15 @@ const fs = require('fs'),
       path = require('path'),
       exec = require('child_process').execSync;
 
-const DEFAULT_NODES = path.join(`~`, `.nvm`, `versions`, `node`),
+const SELF = `fix-nvm-update`,
       TMP = `__TMP_NODE`,
       MV = `mv -v`;
 
 const OPTIONS = { encoding: `utf8` };
 
-const CONFIG = path.join(__dirname, `..`, `config.json`);
+const DEFAULT_NODES = path.join(`~`, `.nvm`, `versions`, `node`),
+      CONFIG = path.join(__dirname, `..`, `config.json`),
+      PACKAGE = path.join(__dirname, `..`, `package.json`);
 
 /**
  * Move global package from old Node.js version to new.
@@ -24,7 +26,10 @@ const fixNvmUpdate = module.exports = args => {
   const to = String(args[0] || ``);
 
   if (args.length !== 1 || !to || to === `--help`) {
-    console.log(`usage: fix-nvm-update <new-version>`);
+    console.log(
+      `usage: ${SELF} <new-version>` +
+      `${SELF} version ${readJSON(PACKAGE).version}`
+    );
     return true;
   }
 
@@ -67,6 +72,11 @@ const fixNvmUpdate = module.exports = args => {
   }
 
   const from = config.last;
+
+  if (from === to) {
+    console.log(`"${to}" is not a new version.`);
+    return true;
+  }
 
   if (!from || typeof from !== `string`) {
     console.error(`Wrong config.last format (in "${CONFIG}"): "${from}".`);

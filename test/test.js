@@ -14,6 +14,8 @@ const CONFIG = path.join(__dirname, `..`, `config.json`),
 
 const OPTIONS = { encoding: `utf8` };
 
+const f1 = `file1`, f2 = `file2`, b1 = `bin1`, b2 = `bin2`;
+
 const libA = path.join(TMP, `A`, `lib`, `node_modules`),
       libB = path.join(TMP, `B`, `lib`, `node_modules`),
       binA = path.join(TMP, `A`, `bin`),
@@ -25,7 +27,12 @@ const libA = path.join(TMP, `A`, `lib`, `node_modules`),
       bnpmA = path.join(binA, `npm`),
       bnpmB = path.join(binB, `npm`);
 
+const files = [npmA, npmB, nodeA, nodeB, bnpmA, bnpmB,
+    path.join(libA, f1), path.join(libA, f2),
+    path.join(binA, b1), path.join(binA, b2)
+  ];
 
+let config, NODES;
 
 /**
  * Throw error, if value is not true.
@@ -48,6 +55,21 @@ const readJSON = name => {
   } catch(e) { return null; }
 };
 
+/**
+ * Sync writing JSON to file.
+ * @param {string}  name Filename.
+ * @param {?Object} data JSON value.
+ */
+const writeJSON = (name, data) => {
+  fs.writeFileSync(name, JSON.stringify(data));
+};
+
+/**
+ * Get relative path from TMP to pth
+ * @param  {string} pth
+ * @return {string}
+ */
+const getRelative = pth => path.relative(TMP, pth);
 
 try {
   fs.accessSync(TMP);
@@ -57,11 +79,22 @@ try {
 
   fs.mkdirSync(TMP);
 
+  fs.mkdirSync(path.join(TMP, `A`));
+  fs.mkdirSync(path.join(TMP, `B`));
+  fs.mkdirSync(path.join(TMP, `A`, `lib`));
+  fs.mkdirSync(path.join(TMP, `B`, `lib`));
+  fs.mkdirSync(libA);
+  fs.mkdirSync(libB);
+  fs.mkdirSync(binA);
+  fs.mkdirSync(binB);
 
+  for (const file of files) {
+    fs.writeFileSync(file, getRelative(file));
+  }
 
 }
 
-describe('API', function() {
+describe('simple API', function() {
 
   it('exists', function() {
 
@@ -78,7 +111,7 @@ describe('API', function() {
   it('throw without args array', function() {
 
     try {
-      npmStatistic();
+      fixNvmUpdate();
     } catch(e) {
       return;
     }
@@ -87,19 +120,41 @@ describe('API', function() {
 
   });
 
-  it('throw with string arg', function() {
+  it('return true with array of string args', function() {
 
-    try {
-      npmStatistic(`string`);
-    } catch(e) {
-      return;
-    }
-
-    assert(false);
+    assert(fixNvmUpdate([`foo`, `bar`]));
 
   });
 
-  it(`get error with unknown command`, function() {
+  it('return true with one arg', function() {
+
+    assert(fixNvmUpdate([`foo`]));
+
+  });
+
+  it('has config', function() {
+
+    config = readJSON(CONFIG);
+    NODES = config.nodes;
+
+    assert(NODES && typeof NODES === 'string');
+
+    config.nodes = TMP;
+    writeJSON(CONFIG, config);
+
+  });
+
+});
+
+describe('API', function() {
+
+  it('return false with incorrect Node version', function() {
+
+    assert(fixNvmUpdate([` v7.0.0`]) === false);
+
+  });
+
+  it(`show usage with option "--help"`, function() {
 
     const error = console.error;
     const log = console.log;
@@ -107,15 +162,16 @@ describe('API', function() {
 
     try {
 
-      console.error = str => {
-        assert(str.includes(NOT_A_COMMAND));
-        assert(str.includes(`Unknown`));
+      console.log = str => {
+        assert(str.includes(`usage`));
+        assert(str.includes(SELF));
+        assert(str.includes(`version`));
         ++called;
       };
 
-      console.log = () => assert(false);
+      console.error = () => assert(false);
 
-      npmStatistic([NOT_A_COMMAND]);
+      assert(fixNvmUpdate([`--help`]));
       assert(called === 1);
 
     } finally {
@@ -127,6 +183,99 @@ describe('API', function() {
 
   });
 
+  it(`show usage with empty arg`, function() {
+
+    const error = console.error;
+    const log = console.log;
+    let called = 0;
+
+    try {
+
+      console.log = str => {
+        assert(str.includes(`usage`));
+        assert(str.includes(SELF));
+        assert(str.includes(`version`));
+        ++called;
+      };
+
+      console.error = () => assert(false);
+
+      assert(fixNvmUpdate([``]));
+      assert(called === 1);
+
+    } finally {
+
+      console.error = error;
+      console.log = log;
+
+    }
+
+  });
+
+  it(`show usage with extra args`, function() {
+
+    const error = console.error;
+    const log = console.log;
+    let called = 0;
+
+    try {
+
+      console.log = str => {
+        assert(str.includes(`usage`));
+        assert(str.includes(SELF));
+        assert(str.includes(`version`));
+        ++called;
+      };
+
+      console.error = () => assert(false);
+
+      assert(fixNvmUpdate([`foo`, `bar`]));
+      assert(called === 1);
+
+    } finally {
+
+      console.error = error;
+      console.log = log;
+
+    }
+
+  });
+
+  it(`show message about the same version`, function() {
+
+    assert(fixNvmUpdate([`foo`]));
+
+    const error = console.error;
+    const log = console.log;
+    let called = 0;
+
+    try {
+
+      console.log = str => {
+        assert(str.includes(`foo`));
+        assert(str.includes(`not`));
+        assert(str.includes(`version`));
+        ++called;
+      };
+
+      console.error = () => assert(false);
+
+      assert(fixNvmUpdate([`foo`]));
+      assert(called === 1);
+
+    } finally {
+
+      console.error = error;
+      console.log = log;
+
+    }
+
+    config.nodes = NODES;
+    writeJSON(CONFIG, config);
+
+  });
+
 });
+
 
 });
