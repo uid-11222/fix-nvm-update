@@ -27,7 +27,7 @@ const fixNvmUpdate = module.exports = args => {
 
   if (args.length !== 1 || !to || to === `--help`) {
     console.log(
-      `usage: ${SELF} <new-version>` +
+      `usage: ${SELF} <new-version>\n` +
       `${SELF} version ${readJSON(PACKAGE).version}`
     );
     return true;

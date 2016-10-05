@@ -2,9 +2,9 @@
 
 [![NPM version][npm-image]][npm-url] ![node][node-image] ![dependencies][dependencies-image] [![License MIT][license-image]](LICENSE)
 
-[![NPM](https://nodei.co/npm/npm-statistic.png)](https://nodei.co/npm/fix-nvm-update/)
+[![NPM](https://nodei.co/npm/fix-nvm-update.png)](https://nodei.co/npm/fix-nvm-update/)
 
-**fix-nvm-update** quickly move all global npm packages from old Node version to new (only for versions, installed via [NVM](https://github.com/creationix/nvm), without reinstalling.
+**fix-nvm-update** quickly move all global npm packages from old Node version to new (only for versions, installed via [NVM](https://github.com/creationix/nvm)), without reinstalling.
 
 ## Usage ##
 You need a node version >=6.0.0.  
@@ -21,9 +21,9 @@ Usually you can see all installed Node versions in directory **~/.nvm/versions/n
 In **last** field of **config.json** you can manually set Node version (for moving packages from this version to new one).
 
 ## Why ##
-[NVM](https://github.com/creationix/nvm) offers a official way of updating: [Migrating global packages while installing](https://github.com/creationix/nvm#migrating-global-packages-while-installing)
+[NVM](https://github.com/creationix/nvm) offers a official way of updating: [Migrating global packages while installing](https://github.com/creationix/nvm#migrating-global-packages-while-installing).
 ```bash
-nvm install v6.7.0 --reinstall-packages-from=v6.6.0
+$ nvm install v6.7.0 --reinstall-packages-from=v6.6.0
 ```
 It works, but this solution has a problems:
  - all packages reinstalled -- it's take a long time
@@ -32,14 +32,15 @@ It works, but this solution has a problems:
  - old bin links do not deleted (but there is no real problem with that)
 
 ## How ##
-Let $NODES be the path of Node versions, $OLD -- your old Node version, and $NEW -- the new one. Then **fix-nvm-update** just run commands:
+Let current directory is the path of Node versions, **old** -- your old Node version, and **new** -- the new one. Then **fix-nvm-update** just run commands:
 ```bash
-$ mv $NODES/$OLD/lib/node_modules/* $NODES/__TMP
-$ mv $NODES/__TMP/npm $NODES/$OLD/lib/node_modules
-$ mv $NODES/__TMP/* $NODES/$NEW/lib/node_modules
-$ mv $NODES/$OLD/bin/* $NODES/__TMP
-$ mv $NODES/__TMP/npm $NODES/__TMP/node $NODES/$OLD/bin
-$ mv $NODES/__TMP/* $NODES/$NEW/bin
+$ mv old/lib/node_modules/* __TMP
+$ mv __TMP/npm old/lib/node_modules
+$ mv __TMP/* new/lib/node_modules
+$
+$ mv old/bin/* __TMP
+$ mv __TMP/npm __TMP/node nodes/old/bin
+$ mv __TMP/* new/bin
 ```
 So, **npm** package, and bin links to **npm** and **node** do not moving.
 
