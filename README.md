@@ -34,13 +34,17 @@ It works, but this solution has a problems:
 ## How ##
 Let current directory is the path of Node versions, **old** -- your old Node version, and **new** -- the new one. Then **fix-nvm-update** just run commands:
 ```bash
-$ mv old/lib/node_modules/* __TMP
-$ mv __TMP/npm old/lib/node_modules
-$ mv __TMP/* new/lib/node_modules
-$
-$ mv old/bin/* __TMP
-$ mv __TMP/npm __TMP/node nodes/old/bin
-$ mv __TMP/* new/bin
+$ mkdir tmp
+
+$ mv old/lib/node_modules/* tmp
+$ mv tmp/npm old/lib/node_modules
+$ mv tmp/* new/lib/node_modules
+
+$ mv old/bin/* tmp
+$ mv tmp/npm tmp/node nodes/old/bin
+$ mv tmp/* new/bin
+
+$ rmdir tmp
 ```
 So, **npm** package, and bin links to **npm** and **node** do not moving.
 

@@ -1,6 +1,12 @@
 'use strict'; /* global describe, it  */
 describe('fix-nvm-update', function() {
 
+/**
+ * Default timeout is 2000, but sometimes some tests may take
+ * longer due to the synchronous operation of the file system
+ */
+this.timeout(8000);
+
 const fs = require('fs'),
       exec = require('child_process').execSync,
       path = require('path'),
@@ -15,12 +21,12 @@ const OPTIONS = { encoding: `utf8` };
 
 const f1 = `file1`, f2 = `file2`, b1 = `bin1`, b2 = `bin2`;
 
-const libA = path.join(TMP, `A`, `lib`, `node_modules`),
-      libB = path.join(TMP, `B`, `lib`, `node_modules`),
-      binA = path.join(TMP, `A`, `bin`),
-      binB = path.join(TMP, `B`, `bin`),
-      npmA = path.join(libA, `npm`),
-      npmB = path.join(libB, `npm`),
+const libA  = path.join(TMP, `A`, `lib`, `node_modules`),
+      libB  = path.join(TMP, `B`, `lib`, `node_modules`),
+      binA  = path.join(TMP, `A`, `bin`),
+      binB  = path.join(TMP, `B`, `bin`),
+      npmA  = path.join(libA, `npm`),
+      npmB  = path.join(libB, `npm`),
       nodeA = path.join(binA, `node`),
       nodeB = path.join(binB, `node`),
       bnpmA = path.join(binA, `npm`),
