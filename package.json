@@ -1,10 +1,11 @@
 {
   "name": "fix-nvm-update",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "Migrating global npm packages to new Node.js version (nvm only)",
   "main": "src/fix-nvm-update.js",
   "scripts": {
-    "test": "mocha ./test/test.js"
+    "test": "mocha ./test/test.js",
+    "push": "git push && npm publish"
   },
   "bin": {
     "fix-nvm-update": "./src/fix-nvm-update.js"
