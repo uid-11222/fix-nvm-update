@@ -1,0 +1,14 @@
+sudo: false
+language: node_js
+node_js:
+  - 6.7.0
+branches:
+  only:
+    - master
+cache:
+  directories:
+  - node_modules
+  - $HOME/.npm
+  - $HOME/.nvm
+script:
+  - npm test

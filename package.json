@@ -4,7 +4,7 @@
   "description": "Migrating global npm packages to new Node.js version (nvm only)",
   "main": "src/fix-nvm-update.js",
   "scripts": {
-    "test": "./node_modules/mocha/bin/mocha ./test/test.js"
+    "test": "mocha ./test/test.js"
   },
   "bin": {
     "fix-nvm-update": "./src/fix-nvm-update.js"

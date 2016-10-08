@@ -20,6 +20,13 @@ $ fix-nvm-update v6.7.0
 Usually you can see all installed Node versions in directory **~/.nvm/versions/node**. If on your system this directory has other path, you can change it in field **nodes** of **config.json** file in **fix-nvm-update** directory.  
 In **last** field of **config.json** you can manually set Node version (for moving packages from this version to new one).
 
+It's not a problem if **fix-nvm-update** move itself with other global packages.
+
+This will show usage and version:
+```bash
+$ fix-nvm-update --help
+```
+
 ## Why ##
 [NVM](https://github.com/creationix/nvm) offers a official way of updating: [Migrating global packages while installing](https://github.com/creationix/nvm#migrating-global-packages-while-installing).
 ```bash

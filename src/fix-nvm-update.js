@@ -12,7 +12,7 @@ const SELF = `fix-nvm-update`,
 
 const OPTIONS = { encoding: `utf8` };
 
-const DEFAULT_NODES = path.join(`$HOME`, `.nvm`, `versions`, `node`),
+const DEFAULT_NODES = path.join(process.env.HOME, `.nvm`, `versions`, `node`),
       CONFIG = path.join(__dirname, `..`, `config.json`),
       PACKAGE = path.join(__dirname, `..`, `package.json`);
 
@@ -28,7 +28,7 @@ const fixNvmUpdate = module.exports = args => {
   if (args.length !== 1 || !to || to === `--help`) {
     console.log(
       `usage: ${SELF} <new-version>\n` +
-      `${SELF} version ${readJSON(PACKAGE).version}`
+      `${SELF} version ${require(PACKAGE).version}`
     );
     return true;
   }
@@ -64,6 +64,15 @@ const fixNvmUpdate = module.exports = args => {
     return false;
   }
 
+  const tmp = path.join(nodes, TMP),
+        toLib = path.join(nodes, to, `lib`, `node_modules`),
+        toBin = path.join(nodes, to, `bin`);
+
+  if (!isInstalled(toLib, toBin)) {
+    console.log(`New version "${to}" not yet installed (in "${nodes}").`);
+    return true;
+  }
+
   if (!hasOwn.call(config, `last`)) {
     config.last = to;
     console.log(`No "last" field in "${CONFIG}", so wrote "${to}" as "last".`);
@@ -83,8 +92,6 @@ const fixNvmUpdate = module.exports = args => {
     return false;
   }
 
-  const tmp = path.join(nodes, TMP);
-
   try {
     fs.accessSync(tmp);
     console.error(`TMP directory already exists ("${tmp}").`);
@@ -94,22 +101,14 @@ const fixNvmUpdate = module.exports = args => {
   const tmpAll  = path.join(tmp, `*`),
         tmpNpm  = path.join(tmp, `npm`),
         tmpNode = path.join(tmp, `node`),
-
         fromLib = path.join(nodes, from, `lib`, `node_modules`),
-          toLib = path.join(nodes,   to, `lib`, `node_modules`),
-         libAll = path.join(fromLib, `*`),
-
         fromBin = path.join(nodes, from, `bin`),
-          toBin = path.join(nodes,   to, `bin`),
+         libAll = path.join(fromLib, `*`),
          binAll = path.join(fromBin, `*`);
 
   if (!isInstalled(fromLib, fromBin)) {
-    console.error(`Version "${from}" not installed`);
+    console.error(`Version "${from}" not installed (in "${nodes}").`);
     return false;
-  }
-  if (!isInstalled(toLib, toBin)) {
-    console.log(`New version "${from}" not yet installed`);
-    return true;
   }
 
   const commands = [
@@ -135,7 +134,7 @@ const fixNvmUpdate = module.exports = args => {
 
     const run = command.join(` `);
 
-    console.log(`Exec "${run}".`);
+    console.log(`\nExec "${run}".\n`);
     console.log(exec(run, OPTIONS));
   }
 
@@ -191,6 +190,7 @@ const isInstalled = (lib, bin) => {
     assert(fs.statSync(path.join(bin,  `npm`)).isFile());
     assert(fs.statSync(path.join(bin, `node`)).isFile());
   } catch (e) {
+    console.log(e);
     return false;
   }
   return true;
