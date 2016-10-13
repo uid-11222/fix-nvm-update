@@ -5,8 +5,7 @@
 ![node][node-image]
 ![dependencies][dependencies-image]
 [![License MIT][license-image]](LICENSE)
-
-[![NPM](https://nodei.co/npm/fix-nvm-update.png)](https://nodei.co/npm/fix-nvm-update/)
+[![NPM version][nodei-image]][nodei-url]
 
 **fix-nvm-update** quickly move all global npm packages from old Node version to new (only for versions, installed via [NVM](https://github.com/creationix/nvm)), without reinstalling.
 
@@ -80,14 +79,22 @@ So, **npm** package, and bin links to **npm** and **node** do not moving.
 $ npm install
 $ npm test
 ```
+Travis: https://travis-ci.org/uid-11222/fix-nvm-update.
 
 ## License
 [MIT](LICENSE)
 
-[license-image]: https://img.shields.io/badge/license-MIT-blue.svg "license-image"
-[travis-image]: https://img.shields.io/travis/uid-11222/fix-nvm-update.svg "status"
+[license-image]: https://img.shields.io/badge/license-MIT-blue.svg "The MIT License"
+
+[travis-image]: https://img.shields.io/travis/uid-11222/fix-nvm-update.svg "status on travis"
 [travis-url]: https://travis-ci.org/uid-11222/fix-nvm-update "travis"
-[dependencies-image]: https://img.shields.io/gemnasium/mathiasbynens/he.svg?maxAge=2592000 "dependencies-image"
-[node-image]: https://img.shields.io/badge/node-v6.0.0-brightgreen.svg?maxAge=2592000 "node-image"
-[npm-image]: https://img.shields.io/npm/v/fix-nvm-update.svg "npm-image"
+
+[dependencies-image]: https://img.shields.io/gemnasium/mathiasbynens/he.svg?maxAge=2592000 "dependencies: none"
+
+[node-image]: https://img.shields.io/badge/node-v6.0.0-brightgreen.svg?maxAge=2592000 "node: >=v6.0.0"
+
+[npm-image]: https://img.shields.io/npm/v/fix-nvm-update.svg "fix-nvm-update on npm"
 [npm-url]: https://www.npmjs.com/package/fix-nvm-update "fix-nvm-update"
+
+[nodei-image]: https://nodei.co/npm/fix-nvm-update.png "fix-nvm-update on npm"
+[nodei-url]: https://nodei.co/npm/fix-nvm-update/ "fix-nvm-update on npm"
