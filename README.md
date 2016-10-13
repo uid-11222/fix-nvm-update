@@ -8,23 +8,35 @@
 
 ## Usage ##
 You need a node version >=6.0.0.  
-Install **fix-nvm-update** localy or global, and set your current version of Node on first **fix-nvm-update** run:
+Install **fix-nvm-update** localy or global, and set your current version of Node:
 ```bash
-$ fix-nvm-update v6.6.0
+$ fix-nvm-update set last v6.6.0
+```
+Check your nvm nodes directory (**~/.nvm/versions/node** by default):
+```bash
+$ fix-nvm-update get
+```
+If needed, change it:
+```bash
+$ fix-nvm-update set nodes /home/user/.nvm/versions/node
 ```
 After installing new Node version just run **fix-nvm-update** with this new version:
 ```bash
 $ nvm install v6.7.0
-$ fix-nvm-update v6.7.0
+$ ../src/fix-nvm-update.js v6.7.0
 ```
-Usually you can see all installed Node versions in directory **~/.nvm/versions/node**. If on your system this directory has other path, you can change it in field **nodes** of **config.json** file in **fix-nvm-update** directory.  
-In **last** field of **config.json** you can manually set Node version (for moving packages from this version to new one).
-
-It's not a problem if **fix-nvm-update** move itself with other global packages.
+It's not a problem if **fix-nvm-update** installed globaly and move itself with other global packages. In this case your need run **fix-nvm-update** from old Node version (because new version has not global packages yet):
+```bash
+$ nvm install v6.7.0
+$ nvm use v6.6.0
+$ fix-nvm-update v6.7.0
+$ nvm use v6.7.0
+```
+Now all global packages are in v6.7.0 (includes **fix-nvm-update**).
 
 This will show usage and version:
 ```bash
-$ fix-nvm-update --help
+$ fix-nvm-update help
 ```
 
 ## Why ##
@@ -59,7 +71,7 @@ $ rmdir tmp
 So, **npm** package, and bin links to **npm** and **node** do not moving.
 
 ## Tests ##
-18 tests via Mocha:
+30 tests via Mocha:
 ```bash
 $ npm install
 $ npm test

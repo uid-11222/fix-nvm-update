@@ -10,11 +10,12 @@ const SELF = `fix-nvm-update`,
       TMP = `__TMP_NODE`,
       MV = `mv -v`;
 
-const OPTIONS = { encoding: `utf8` };
+const OPTIONS = { encoding: `utf8` },
+      join = path.join.bind(path);
 
-const DEFAULT_NODES = path.join(process.env.HOME, `.nvm`, `versions`, `node`),
-      CONFIG = path.join(__dirname, `..`, `config.json`),
-      PACKAGE = path.join(__dirname, `..`, `package.json`);
+const DEFAULT_NODES = join(process.env.HOME, `.nvm`, `versions`, `node`),
+      CONFIG = join(__dirname, `..`, `config.json`),
+      PACKAGE = join(__dirname, `..`, `package.json`);
 
 /**
  * Move global package from old Node.js version to new.
@@ -23,26 +24,27 @@ const DEFAULT_NODES = path.join(process.env.HOME, `.nvm`, `versions`, `node`),
  */
 const fixNvmUpdate = module.exports = args => {
 
-  const to = String(args[0] || ``);
-
-  if (args.length !== 1 || !to || to === `--help`) {
-    console.log(
-      `usage: ${SELF} <new-version>\n` +
-      `${SELF} version ${require(PACKAGE).version}`
-    );
-    return true;
-  }
-
-  if (!/^[a-z0-9-.]+$/i.test(to)) {
-    console.error(`Wrong new Node version format ("${to}").`);
-    return false;
-  }
+  const arg = args[0], len = args.length;
 
   try {
     fs.accessSync(CONFIG);
   } catch(e) {
     console.log(`Cannot find config ("${CONFIG}"). Create new config file.`);
-    writeJSON(CONFIG, {});
+    writeJSON(CONFIG, { nodes: DEFAULT_NODES });
+  }
+
+  if (len === 0 || !arg || arg.includes(`help`) ||
+      (arg === `get` && len !== 1) ||
+      (arg === `set` && len !== 3) ||
+      (arg !== `set` && arg !== `get` && len !== 1)) {
+    console.log(
+      `usage: ${SELF} <new-version>\n` +
+      `       ${SELF} get\n` +
+      `       ${SELF} set last v6.6.0\n` +
+      `       ${SELF} set nodes /home/user/.nvm/versions/node\n` +
+      `${SELF} version ${require(PACKAGE).version}`
+    );
+    return true;
   }
 
   const config = readJSON(CONFIG);
@@ -52,45 +54,58 @@ const fixNvmUpdate = module.exports = args => {
     return false;
   }
 
-  if (!hasOwn.call(config, `nodes`)) {
-    config.nodes = DEFAULT_NODES;
-    writeJSON(CONFIG, config);
+  if (arg === `get`) {
+    console.log(config);
+    return true;
   }
 
-  const nodes = config.nodes;
+  if (arg === `set`) {
+    config[args[1]] = args[2];
+    console.log(`Set ${args[1]} = "${args[2]}".`);
+    writeJSON(CONFIG, config);
+    return true;
+  }
 
-  if (!nodes || typeof nodes !== `string`) {
-    console.error(`Wrong "nodes" format (in "${CONFIG}"): "${nodes}".`);
+  const from = config.last, to = arg, nodes = config.nodes;
+
+  if (!isVersion(from)) {
+    console.error(`Wrong last Node version format ("${from}").\n` +
+      `Set correct last version: ${SELF} set last v6.6.0`);
     return false;
   }
 
-  const tmp = path.join(nodes, TMP),
-        toLib = path.join(nodes, to, `lib`, `node_modules`),
-        toBin = path.join(nodes, to, `bin`);
+  if (from === to) {
+    console.log(`"${to}" already setted as a last version.`);
+    return true;
+  }
+
+  if (!nodes || typeof nodes !== `string`) {
+    console.error(`Wrong nodes format (in "${CONFIG}"): "${nodes}".`);
+    return false;
+  }
+
+  if (!isVersion(to)) {
+    console.error(`Wrong new Node version format ("${to}").`);
+    return false;
+  }
+
+  const toLib = join(nodes, to, `lib`, `node_modules`),
+        toBin = join(nodes, to, `bin`);
 
   if (!isInstalled(toLib, toBin)) {
     console.log(`New version "${to}" not yet installed (in "${nodes}").`);
     return true;
   }
 
-  if (!hasOwn.call(config, `last`)) {
-    config.last = to;
-    console.log(`No "last" field in "${CONFIG}", so wrote "${to}" as "last".`);
-    writeJSON(CONFIG, config);
-    return true;
-  }
+  const fromLib = join(nodes, from, `lib`, `node_modules`),
+        fromBin = join(nodes, from, `bin`);
 
-  const from = config.last;
-
-  if (from === to) {
-    console.log(`"${to}" is not a new version.`);
-    return true;
-  }
-
-  if (!from || typeof from !== `string`) {
-    console.error(`Wrong config.last format (in "${CONFIG}"): "${from}".`);
+  if (!isInstalled(fromLib, fromBin)) {
+    console.error(`Last version "${from}" not installed (in "${nodes}").`);
     return false;
   }
+
+  const tmp = join(nodes, TMP);
 
   try {
     fs.accessSync(tmp);
@@ -98,18 +113,11 @@ const fixNvmUpdate = module.exports = args => {
     return false;
   } catch (e) {}
 
-  const tmpAll  = path.join(tmp, `*`),
-        tmpNpm  = path.join(tmp, `npm`),
-        tmpNode = path.join(tmp, `node`),
-        fromLib = path.join(nodes, from, `lib`, `node_modules`),
-        fromBin = path.join(nodes, from, `bin`),
-         libAll = path.join(fromLib, `*`),
-         binAll = path.join(fromBin, `*`);
-
-  if (!isInstalled(fromLib, fromBin)) {
-    console.error(`Version "${from}" not installed (in "${nodes}").`);
-    return false;
-  }
+  const tmpAll  = join(tmp, `*`),
+        tmpNpm  = join(tmp, `npm`),
+        tmpNode = join(tmp, `node`),
+         libAll = join(fromLib, `*`),
+         binAll = join(fromBin, `*`);
 
   const commands = [
 
@@ -143,8 +151,6 @@ const fixNvmUpdate = module.exports = args => {
 
   return true;
 };
-
-const hasOwn = ({}).hasOwnProperty;
 
 /**
  * Throw error, if value is not true.
@@ -186,19 +192,26 @@ const isInstalled = (lib, bin) => {
   try {
     assert(fs.statSync(lib).isDirectory());
     assert(fs.statSync(bin).isDirectory());
-    assert(fs.statSync(path.join(lib,  `npm`)).isDirectory());
-    assert(fs.statSync(path.join(bin,  `npm`)).isFile());
-    assert(fs.statSync(path.join(bin, `node`)).isFile());
+    assert(fs.statSync(join(lib,  `npm`)).isDirectory());
+    assert(fs.statSync(join(bin,  `npm`)).isFile());
+    assert(fs.statSync(join(bin, `node`)).isFile());
   } catch (e) {
-    console.log(e);
     return false;
   }
   return true;
 };
 
 /**
+ * Return true, if ver is correct Node version.
+ * @param  {*} ver
+ * @return {boolean}
+ */
+const isVersion = ver => !!ver &&
+    typeof ver === `string` && /^[a-z0-9-.]+$/i.test(ver);
+
+/**
  * If called from command line, execute with it args.
  */
-if (require.main && require.main.id === module.id) {
+if (require.main === module) {
   fixNvmUpdate(process.argv.slice(2));
 }

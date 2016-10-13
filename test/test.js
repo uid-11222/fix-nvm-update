@@ -10,7 +10,7 @@ this.timeout(8192);
 const fs = require('fs'),
       exec = require('child_process').execSync,
       path = require('path'),
-      fixNvmUpdate = require('../src/fix-nvm-update');
+      fixNvmUpdate = require('..');
 
 const CONFIG = path.join(__dirname, `..`, `config.json`),
       TMP = path.join(__dirname, `TMP`),
@@ -77,6 +77,14 @@ const writeJSON = (name, data) => {
   fs.writeFileSync(name, JSON.stringify(data));
 };
 
+const assertUsage = str => {
+  assert(str.startsWith(`usage`));
+  assert(str.includes(SELF));
+  assert(str.includes(`set`));
+  assert(str.includes(`get`));
+  assert(str.includes(`version`));
+};
+
 /**
  * Get relative path from TMP to pth
  * @param  {string} pth
@@ -123,6 +131,16 @@ describe('simple API', function() {
 
     fixNvmUpdate([`A`, `B`]);
 
+    /**
+     * HACK Temporary change config here, only for testing.
+     */
+    config = readJSON(CONFIG);
+    NODES = config.nodes;
+    LAST = config.last;
+    config.nodes = TMP;
+    config.last = `A`;
+    writeJSON(CONFIG, config);
+
   });
 
   it('throw without args array', function() {
@@ -145,26 +163,15 @@ describe('simple API', function() {
 
   it('return true with one arg', function() {
 
-    config = readJSON(CONFIG);
-    if (config) LAST = config.last;
-
     assert(fixNvmUpdate([`A`]));
 
   });
 
   it('has config', function() {
 
-    config = readJSON(CONFIG);
-    NODES = config.nodes;
+    let config = readJSON(CONFIG);
 
-    assert(NODES && typeof NODES === 'string');
-
-    /**
-     * HACK Temporary change config here, only for testing.
-     */
-    config.nodes = TMP;
-    config.last  = undefined;
-    writeJSON(CONFIG, config);
+    assert(config.nodes && typeof config.nodes === 'string');
 
   });
 
@@ -187,9 +194,7 @@ describe('API', function() {
     try {
 
       console.log = str => {
-        assert(str.startsWith(`usage`));
-        assert(str.includes(SELF));
-        assert(str.includes(`version`));
+        assertUsage(str);
         ++called;
       };
 
@@ -207,7 +212,7 @@ describe('API', function() {
 
   });
 
-  it(`show usage with empty arg`, function() {
+  it(`show usage with option "help"`, function() {
 
     const error = console.error;
     const log = console.log;
@@ -216,15 +221,13 @@ describe('API', function() {
     try {
 
       console.log = str => {
-        assert(str.startsWith(`usage`));
-        assert(str.includes(SELF));
-        assert(str.includes(`version`));
+        assertUsage(str);
         ++called;
       };
 
       console.error = () => assert(false);
 
-      assert(fixNvmUpdate([``]));
+      assert(fixNvmUpdate([`--help`]));
       assert(called === 1);
 
     } finally {
@@ -245,15 +248,148 @@ describe('API', function() {
     try {
 
       console.log = str => {
-        assert(str.startsWith(`usage`));
-        assert(str.includes(SELF));
-        assert(str.includes(`version`));
+        assertUsage(str);
         ++called;
       };
 
       console.error = () => assert(false);
 
       assert(fixNvmUpdate([`A`, `B`]));
+      assert(called === 1);
+
+    } finally {
+
+      console.error = error;
+      console.log = log;
+
+    }
+
+  });
+
+  it(`show usage with extra "get" args`, function() {
+
+    const error = console.error;
+    const log = console.log;
+    let called = 0;
+
+    try {
+
+      console.log = str => {
+        assertUsage(str);
+        ++called;
+      };
+
+      console.error = () => assert(false);
+
+      assert(fixNvmUpdate([`get`, `B`]));
+      assert(called === 1);
+
+    } finally {
+
+      console.error = error;
+      console.log = log;
+
+    }
+
+  });
+
+  it(`show usage with extra "set" args`, function() {
+
+    const error = console.error;
+    const log = console.log;
+    let called = 0;
+
+    try {
+
+      console.log = str => {
+        assertUsage(str);
+        ++called;
+      };
+
+      console.error = () => assert(false);
+
+      assert(fixNvmUpdate([`set`, `B`, `C`, `D`]));
+      assert(called === 1);
+
+    } finally {
+
+      console.error = error;
+      console.log = log;
+
+    }
+
+  });
+
+  it(`show usage with missed "set" args`, function() {
+
+    const error = console.error;
+    const log = console.log;
+    let called = 0;
+
+    try {
+
+      console.log = str => {
+        assertUsage(str);
+        ++called;
+      };
+
+      console.error = () => assert(false);
+
+      assert(fixNvmUpdate([`set`, `B`]));
+      assert(called === 1);
+
+    } finally {
+
+      console.error = error;
+      console.log = log;
+
+    }
+
+  });
+
+  it(`show usage with empty args array`, function() {
+
+    const error = console.error;
+    const log = console.log;
+    let called = 0;
+
+    try {
+
+      console.log = str => {
+        assertUsage(str);
+        ++called;
+      };
+
+      console.error = () => assert(false);
+
+      assert(fixNvmUpdate([``]));
+      assert(called === 1);
+
+    } finally {
+
+      console.error = error;
+      console.log = log;
+
+    }
+
+  });
+
+  it(`show usage with empty arg`, function() {
+
+    const error = console.error;
+    const log = console.log;
+    let called = 0;
+
+    try {
+
+      console.log = str => {
+        assertUsage(str);
+        ++called;
+      };
+
+      console.error = () => assert(false);
+
+      assert(fixNvmUpdate([``]));
       assert(called === 1);
 
     } finally {
@@ -277,7 +413,8 @@ describe('API', function() {
 
       console.log = str => {
         assert(str.includes(`A`));
-        assert(str.includes(`not`));
+        assert(str.includes(`already setted`));
+        assert(str.includes(`last`));
         assert(str.includes(`version`));
         ++called;
       };
@@ -291,6 +428,78 @@ describe('API', function() {
 
       console.error = error;
       console.log = log;
+
+    }
+
+  });
+
+});
+
+describe('get', function() {
+
+  it(`show config`, function() {
+
+    const error = console.error;
+    const log = console.log;
+    let called = 0;
+
+    try {
+
+      console.log = cfg => {
+        assert(cfg instanceof Object);
+        assert(`last` in cfg);
+        assert(`nodes` in cfg);
+        ++called;
+      };
+
+      console.error = () => assert(false);
+
+      assert(fixNvmUpdate([`get`]));
+      assert(called === 1);
+
+    } finally {
+
+      console.error = error;
+      console.log = log;
+
+    }
+
+  });
+
+});
+
+describe('set', function() {
+
+  it(`write fields`, function() {
+
+    const error = console.error;
+    const log = console.log;
+    let called = 0;
+
+    try {
+
+      console.log = str => {
+        assert(str.includes(`foo`), str);
+        assert(str.includes(`bar`), str);
+        ++called;
+      };
+
+      console.error = () => assert(false);
+
+      assert(fixNvmUpdate([`set`, `foo`, `bar`]));
+      assert(called === 1);
+
+      let config = readJSON(CONFIG);
+      assert(config.foo === `bar`);
+
+    } finally {
+
+      console.error = error;
+      console.log = log;
+
+      let config = readJSON(CONFIG);
+      config.foo = undefined;
+      writeJSON(CONFIG, config);
 
     }
 
@@ -371,6 +580,50 @@ describe('bash command', function() {
   it(`show usage with extra args`, function() {
 
     assert(exec(`${MAIN} A B`, OPTIONS).startsWith(`usage`));
+
+  });
+
+  it(`show usage with extra get args`, function() {
+
+    assert(exec(`${MAIN} get B`, OPTIONS).startsWith(`usage`));
+
+  });
+
+  it(`show usage with extra set args`, function() {
+
+    assert(exec(`${MAIN} set B C D`, OPTIONS).startsWith(`usage`));
+
+  });
+
+  it(`show usage with missed set args`, function() {
+
+    assert(exec(`${MAIN} set B`, OPTIONS).startsWith(`usage`));
+
+  });
+
+  it(`get config`, function() {
+
+    const res = exec(`${MAIN} get`, OPTIONS);
+
+    assert(res.startsWith(`{`));
+    assert(res.includes(`nodes`));
+    assert(res.includes(`last`));
+    assert(res.includes(`}`));
+
+  });
+
+  it(`set to config`, function() {
+
+    const res = exec(`${MAIN} set foo bar`, OPTIONS);
+
+    assert(res.includes(`foo`));
+    assert(res.includes(`bar`));
+
+    let config = readJSON(CONFIG);
+    assert(config.foo === `bar`);
+
+    config.foo = undefined;
+    writeJSON(CONFIG, config);
 
   });
 
