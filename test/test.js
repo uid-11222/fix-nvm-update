@@ -686,10 +686,6 @@ describe('bash command', function() {
 
   });
 
-  it(`test Travis`, function () {
-    assert(false);
-  });
-
 });
 
 });

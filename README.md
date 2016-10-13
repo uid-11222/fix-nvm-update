@@ -1,12 +1,16 @@
-# fix-nvm-update #
+# fix-nvm-update
 
-[![NPM version][npm-image]][npm-url] ![node][node-image] ![dependencies][dependencies-image] [![License MIT][license-image]](LICENSE)
+[![NPM version][npm-image]][npm-url]
+[![Build status][travis-image]][travis-url]
+![node][node-image]
+![dependencies][dependencies-image]
+[![License MIT][license-image]](LICENSE)
 
 [![NPM](https://nodei.co/npm/fix-nvm-update.png)](https://nodei.co/npm/fix-nvm-update/)
 
 **fix-nvm-update** quickly move all global npm packages from old Node version to new (only for versions, installed via [NVM](https://github.com/creationix/nvm)), without reinstalling.
 
-## Usage ##
+## Usage
 You need a node version >=6.0.0.  
 Install **fix-nvm-update** localy or global, and set your current version of Node:
 ```bash
@@ -39,7 +43,7 @@ This will show usage and version:
 $ fix-nvm-update help
 ```
 
-## Why ##
+## Why
 [NVM](https://github.com/creationix/nvm) offers a official way of updating: [Migrating global packages while installing](https://github.com/creationix/nvm#migrating-global-packages-while-installing).
 ```bash
 $ nvm install v6.7.0 --reinstall-packages-from=v6.6.0
@@ -53,7 +57,7 @@ It works, but this solution has a problems:
 But simple moving packages to new Node version directory works very quickly. **fix-nvm-update** does it carefully with full logging (in stdout).
 
 
-## How ##
+## How
 Let current directory is the path of Node versions, **old** -- your old Node version, and **new** -- the new one. Then **fix-nvm-update** just run commands:
 ```bash
 $ mkdir tmp
@@ -70,17 +74,19 @@ $ rmdir tmp
 ```
 So, **npm** package, and bin links to **npm** and **node** do not moving.
 
-## Tests ##
+## Tests
 30 tests via Mocha:
 ```bash
 $ npm install
 $ npm test
 ```
 
-## License ##
+## License
 [MIT](LICENSE)
 
 [license-image]: https://img.shields.io/badge/license-MIT-blue.svg "license-image"
+[travis-image]: https://img.shields.io/travis/uid-11222/fix-nvm-update.svg "status"
+[travis-url]: https://travis-ci.org/uid-11222/fix-nvm-update "travis"
 [dependencies-image]: https://img.shields.io/gemnasium/mathiasbynens/he.svg?maxAge=2592000 "dependencies-image"
 [node-image]: https://img.shields.io/badge/node-v6.0.0-brightgreen.svg?maxAge=2592000 "node-image"
 [npm-image]: https://img.shields.io/npm/v/fix-nvm-update.svg "npm-image"
