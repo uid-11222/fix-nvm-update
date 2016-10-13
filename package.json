@@ -1,6 +1,6 @@
 {
   "name": "fix-nvm-update",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Migrating global npm packages to new Node.js version (nvm only)",
   "main": "src/fix-nvm-update.js",
   "scripts": {
@@ -24,7 +24,7 @@
   ],
   "dependencies": {},
   "devDependencies": {
-    "mocha": "^3.1.0"
+    "mocha": "^3.1.2"
   },
   "engines": {
     "node": ">= 6.0.0"
