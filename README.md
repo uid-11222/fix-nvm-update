@@ -5,6 +5,7 @@
 ![node][node-image]
 ![dependencies][dependencies-image]
 [![License MIT][license-image]](LICENSE)
+
 [![NPM version][nodei-image]][nodei-url]
 
 **fix-nvm-update** quickly move all global npm packages from old Node version to new (only for versions, installed via [NVM](https://github.com/creationix/nvm)), without reinstalling.
